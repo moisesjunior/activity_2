@@ -16,6 +16,7 @@ def read_metadado(meta_path):
         "tipos_originais" : dict(zip(list(meta["cols_originais"]),list(meta["tipo_original"]))),
         "tipos_formatted" : dict(zip(list(meta["cols_renamed"]),list(meta["tipo_formatted"]))),
         "cols_chaves" : list(meta.loc[meta["key"] == 1]["cols_originais"]),
+        "cols_chaves_renamed" : [coluna + "_formatted" for coluna in meta.loc[meta["key"] == 1]["cols_renamed"]],
         "null_tolerance" : dict(zip(list(meta["cols_renamed"]), list(meta["raw_null_tolerance"]))),
         "std_str" : list(meta.loc[meta["std_str"] == 1]["cols_renamed"]),
         "corrige_hr" : list(meta.loc[meta["corrige_hr"] == 1]["cols_renamed"])
@@ -100,17 +101,13 @@ def keys_check(df, cols_chaves):
     Função utilizada para validar se os campo(s) chave(s) possurem a mesma quantidade de observações únicas em relação a quantidade da base
     INPUT: 
      - df: o DataFrame com os dados oriundos da planilha de voos
-     - cols_chaves: O nome das chaves de cada coluna que precisa estar presente no data frame criado
     OUTPUT: Um valor booleano para verificar se as chaves estão ok ou não
     '''
-    logger.info("Verificando se o dataframe possui a quantidade de chaves necessárias")
-    teste = len(df[[cols_chaves]])
-    if(len(cols_chaves) == len(df)):
-        logger.info("A quantidade de chaves são iguais!")
-        pass
+    if(len(df[cols_chaves].drop_duplicates()) == len(df)):
+        logger.info(f'As colunas são chaves únicas')
+        return
 
-    logger.error("A quantidade de chaves são diferentes!")
-    pass
+    raise ValueError('As colunas não são chaves únicas')
 
 # Funções auxiliares -------------------------------------------
 

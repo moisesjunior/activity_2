@@ -43,18 +43,31 @@ def feat_eng(df):
         elif 6 <= hra < 12: return "MANHA"
         elif 12 <= hra < 18: return "TARDE"
         else: return "NOITE"
-
-    logger.info("Criando as novas colunas para visualizar mais informações sobre os voos")
+    
+    def flg_status(atraso):
+        if atraso > 0.5 : return "ATRASO"
+        else: return "ONTIME"
 
     tmp = df.copy()
+    logger.info("Criando coluna tempo de voo esperado")
     tmp["tempo_voo_esperado"] = (df["datetime_chegada_formatted"] - df["datetime_partida_formatted"]) / pd.Timedelta(hours=1)
+
+    logger.info("Criando coluna tempo de voo")
     tmp["tempo_voo_hr"] = df["tempo_voo"] /60
+
+    logger.info("Criando coluna tempo de atraso")
     tmp["atraso"] = tmp["tempo_voo_hr"] - tmp["tempo_voo_esperado"]
+
+    logger.info("Criando coluna para o dia da semana do voo")
     tmp["dia_semana"] = df["data_voo"].dt.day_of_week #0=segunda
+
+    logger.info("Criando coluna para o turno do voo")
     tmp["horario"] = df.loc[:,"datetime_partida_formatted"].dt.hour.apply(lambda x: classifica_hora(x))
 
+    logger.info("Criando coluna para o saber se o voo está atrasado ou não")
+    tmp["flg_status"] = tmp.loc[:,"atraso"].apply(lambda x: flg_status(x))
+
     print(tmp.head())
-    logger.info("Colunas criadas!")
     return tmp
 
 def save_data_sqlite(df):
@@ -89,7 +102,7 @@ if __name__ == "__main__":
     df = data_clean(df, metadados)
     print(df.head())
     utils.null_check(df, metadados["null_tolerance"])
-    utils.keys_check(df, metadados["cols_chaves"])
+    utils.keys_check(df, metadados["cols_chaves_renamed"])
     df = feat_eng(df)
     save_data_sqlite(df)
     fetch_sqlite_data(metadados["tabela"][0])
